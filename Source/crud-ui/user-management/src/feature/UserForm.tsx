@@ -29,8 +29,10 @@ const formSchema = z.object({
   PassportExpirtDate: z.date().refine((date) => date > new Date(), {
     message: "Passport expiry date must be in the future",
   }),
-  PassportFile: z.string().url({ message: "Invalid URL for Passport File" }),
-  PersonPhoto: z.string().url({ message: "Invalid URL for Person Photo" }),
+  PassportFile: z
+    .any()
+    .refine((file) => file?.length > 1, "Passport is required"),
+  PersonPhoto: z.any().refine((file) => file?.length > 1, "Photo is required"),
 });
 
 interface RowData {
@@ -42,8 +44,8 @@ interface RowData {
   Designation: string;
   PassportNo: string;
   PassportExpirtDate: Date;
-  PassportFile: string;
-  PersonPhoto: string;
+  PassportFile: File;
+  PersonPhoto: File;
 }
 
 const defaultValues = {
@@ -55,8 +57,8 @@ const defaultValues = {
   Designation: "",
   PassportNo: "",
   PassportExpirtDate: new Date(),
-  PassportFile: "",
-  PersonPhoto: "",
+  PassportFile: undefined,
+  PersonPhoto: undefined,
 };
 
 export function UserForm({

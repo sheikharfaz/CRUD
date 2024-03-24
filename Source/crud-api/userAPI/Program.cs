@@ -1,6 +1,16 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using System.Data;
+using System.Data.SqlClient;
+using userAPI;
+using userAPI.Core;
+using userAPI.Core.Interface;
+
+var builder = WebApplication.CreateBuilder(args);
+
+string dbConnectionString = await AWSSecretManagerConfiguration.GetSecret();
+builder.Services.AddTransient<IDbConnection>((sp) => new SqlConnection(dbConnectionString));
 
 // Add services to the container.
+builder.Services.AddScoped<IUserRepo, UserRepo>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

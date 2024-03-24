@@ -8,6 +8,21 @@
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.302.35" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Core\" />
+    <None Remove="Controllers\" />
+    <None Remove="Entities\" />
+    <None Remove="Core\Interface\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Core\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="Entities\" />
+    <Folder Include="Core\Interface\" />
+  </ItemGroup>
 </Project>
