@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { User } from "@/model/User";
 import { createUser, updateUser } from "@/services/userService";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   LocationId: z.number(),
@@ -66,11 +66,10 @@ export function UserForm({
     defaultValues: row === undefined ? defaultValues : row,
   });
 
-  useEffect(() => {
-    console.log(form.getValues());
-  }, [form.formState]);
+  const [isloading, setIsLoading] = useState(false);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     return new Promise(async (resolve, reject) => {
       try {
         if (row) {
@@ -82,6 +81,7 @@ export function UserForm({
           console.log("User created successfully with ID:", createdUserId);
           alert(`User data is created`);
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Error creating user:", error);
       }
@@ -221,11 +221,7 @@ export function UserForm({
                     <Input
                       type="date"
                       {...field}
-                      value={
-                        field.value
-                          ? new Date(field.value).toISOString().split("T")[0]
-                          : new Date().toISOString().split("T")[0]
-                      }
+                      value={new Date(field.value)?.toISOString().split("T")[0]}
                       onChange={(e) => field.onChange(new Date(e.target.value))}
                     />
                   </FormControl>
@@ -255,7 +251,9 @@ export function UserForm({
             name="PassportFile"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-left">Passport</FormLabel>
+                <FormLabel className="block text-left">
+                  Attach Emirate Id / Passport / Driving license
+                </FormLabel>
                 <FormControl>
                   <Input type="file" accept=".pdf,.jpg,.png" {...field} />
                 </FormControl>
@@ -270,7 +268,7 @@ export function UserForm({
             name="PersonPhoto"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block text-left">Photo</FormLabel>
+                <FormLabel className="block text-left">Attach Photo</FormLabel>
                 <FormControl>
                   <Input type="file" accept=".jpg,.png" {...field} />
                 </FormControl>
@@ -284,7 +282,7 @@ export function UserForm({
             Clear
           </Button>
         )}
-        <Button className="w-1/3 ml-2" type="submit">
+        <Button disabled={isloading} className="w-1/3 ml-2" type="submit">
           Submit
         </Button>
       </form>
