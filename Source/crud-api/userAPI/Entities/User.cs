@@ -3,7 +3,7 @@ namespace userAPI.Entities
 {
 	public class User
 	{
-        public int Id { get; set; }
+        public int LocationId { get; set; }
         public string EmployeeType { get; set; }
         public string Name { get; set; }
         public string MobileNo { get; set; }
@@ -13,7 +13,7 @@ namespace userAPI.Entities
         public string PassportNo { get; set; }
         public DateTime PassportExpirtDate { get; set; }
         public string PassportFilePath { get; set; } 
-        public string PersonPhotoPath { get; set; }
+        public string PersonPhoto { get; set; }
     }
 }
 

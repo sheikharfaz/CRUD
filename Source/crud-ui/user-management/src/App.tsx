@@ -48,9 +48,10 @@ function App() {
           >
             <Card className="w-[800px] block text-center">
               <CardHeader>
-                <CardTitle>Register</CardTitle>
+                <CardTitle>{userData ? "Update" : "Register"}</CardTitle>
                 <CardDescription>
-                  Please fill the below form to create a user
+                  Please fill the below form to{" "}
+                  {userData ? "Update" : "Register"} a user
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -33,40 +33,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useEffect } from "react";
+import { deleteUser, getUsers } from "@/services/userService";
+import { User } from "@/model/User";
 
-export type User = {
-  LocationId: string;
-  EmployeeType: string;
-  Name: string;
-  MobileNo: string;
-  Email: string;
-  Nationality: string;
-  Designation: string;
-  PassportExpiryDate: Date;
-};
-
-const userData: User[] = [
-  {
-    LocationId: "001",
-    EmployeeType: "Full Time",
-    Name: "John Doe",
-    MobileNo: "1234567890",
-    Email: "john@example.com",
-    Nationality: "US",
-    Designation: "Software Engineer",
-    PassportExpiryDate: new Date(),
-  },
-  {
-    LocationId: "002",
-    EmployeeType: "Part Time",
-    Name: "Jane Smith",
-    MobileNo: "9876543210",
-    Email: "jane@example.com",
-    Nationality: "UK",
-    Designation: "UI Designer",
-    PassportExpiryDate: new Date(),
-  },
-];
+// const userData: User[] = [
+//   {
+//     LocationId: "001",
+//     EmployeeType: "Full Time",
+//     Name: "John Doe",
+//     MobileNo: "1234567890",
+//     Email: "john@example.com",
+//     Nationality: "US",
+//     Designation: "Software Engineer",
+//     PassportExpiryDate: new Date(),
+//   },
+//   {
+//     LocationId: "002",
+//     EmployeeType: "Part Time",
+//     Name: "Jane Smith",
+//     MobileNo: "9876543210",
+//     Email: "jane@example.com",
+//     Nationality: "UK",
+//     Designation: "UI Designer",
+//     PassportExpiryDate: new Date(),
+//   },
+// ];
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -171,18 +163,20 @@ export const columns: ColumnDef<User>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <div>
-        {(row.getValue("PassportExpiryDate") as Date).toLocaleDateString()}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const passportExpiryDate = new Date(row.getValue("PassportExpiryDate"));
+
+      if (!isNaN(passportExpiryDate.getTime())) {
+        return <div>{passportExpiryDate.toLocaleDateString()}</div>;
+      }
+    },
   },
 ];
 
 export function UserDetails({
   handleData,
 }: {
-  handleData: (activeTab: string, userData: User) => void;
+  handleData: (activeTab: string, userData?: User) => void;
 }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -191,9 +185,39 @@ export function UserDetails({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [userData, SetUserData] = React.useState<User[]>([]);
+
+  async function fetchUsers() {
+    try {
+      const allUsers = await getUsers();
+      const usersWithPascalCaseKeys: User[] = allUsers.map((user: any) => {
+        const newUser: User = {
+          LocationId: user.locationId,
+          EmployeeType: user.employeeType,
+          Name: user.name,
+          MobileNo: user.mobileNo,
+          Email: user.email,
+          Nationality: user.nationality,
+          Designation: user.designation,
+          PassportNo: user.passportNo,
+          PassportExpiryDate: user.passportExpiryDate,
+          PassportFile: user.passportFile,
+          PersonPhoto: user.personPhoto,
+        };
+        return newUser;
+      });
+      SetUserData(usersWithPascalCaseKeys);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const table = useReactTable({
-    data: userData, // Use your user data here
+    data: userData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -215,8 +239,18 @@ export function UserDetails({
     handleData("create", row.original);
   };
 
-  const handleDelete = (row: any) => {
-    console.log("deleted", row);
+  const handleDelete = async (row: any) => {
+    deleteUser(row.original.LocationId)
+      .then(() => {
+        alert("User deleted successfully");
+      })
+      .catch((error) => {
+        console.error("Failed to delete user:", error);
+        alert("Failed to delete user");
+      });
+    await fetchUsers();
+
+    handleData("create", undefined);
   };
 
   return (

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+
 import {
   Form,
   FormControl,
@@ -12,8 +13,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { User } from "@/model/User";
+import { createUser, updateUser } from "@/services/userService";
+import { useEffect } from "react";
 
 const formSchema = z.object({
+  LocationId: z.number(),
   EmployeeType: z.string().nonempty({ message: "Employee Type is required" }),
   Name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   MobileNo: z
@@ -26,7 +31,7 @@ const formSchema = z.object({
   Nationality: z.string().nonempty({ message: "Nationality is required" }),
   Designation: z.string().nonempty({ message: "Designation is required" }),
   PassportNo: z.string().nonempty({ message: "Passport Number is required" }),
-  PassportExpirtDate: z.date().refine((date) => date > new Date(), {
+  PassportExpiryDate: z.date().refine((date) => date > new Date(), {
     message: "Passport expiry date must be in the future",
   }),
   PassportFile: z
@@ -35,20 +40,8 @@ const formSchema = z.object({
   PersonPhoto: z.any().refine((file) => file?.length > 1, "Photo is required"),
 });
 
-interface RowData {
-  EmployeeType: string;
-  Name: string;
-  MobileNo: string;
-  Email: string;
-  Nationality: string;
-  Designation: string;
-  PassportNo: string;
-  PassportExpirtDate: Date;
-  PassportFile: File;
-  PersonPhoto: File;
-}
-
-const defaultValues = {
+const defaultValues: User = {
+  LocationId: 0,
   EmployeeType: "",
   Name: "",
   MobileNo: "",
@@ -56,7 +49,7 @@ const defaultValues = {
   Nationality: "",
   Designation: "",
   PassportNo: "",
-  PassportExpirtDate: new Date(),
+  PassportExpiryDate: new Date(),
   PassportFile: undefined,
   PersonPhoto: undefined,
 };
@@ -65,7 +58,7 @@ export function UserForm({
   row,
   isEdit,
 }: {
-  row?: RowData;
+  row?: User;
   isEdit?: (clearData: any) => void;
 }) {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -73,14 +66,26 @@ export function UserForm({
     defaultValues: row === undefined ? defaultValues : row,
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    if (isEdit) {
-      console.log("updated", values);
-    } else {
-      console.log("Added", values);
-    }
+  useEffect(() => {
+    console.log(form.getValues());
+  }, [form.formState]);
 
-    console.log(values);
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (row) {
+          const createdUserId = await updateUser(values.LocationId, values);
+          console.log("User updated successfully with ID:", createdUserId);
+          alert(`User data is updated`);
+        } else {
+          const createdUserId = await createUser(values);
+          console.log("User created successfully with ID:", createdUserId);
+          alert(`User data is created`);
+        }
+      } catch (error) {
+        console.error("Error creating user:", error);
+      }
+    });
   }
 
   const handleClearFormData = () => {
@@ -205,7 +210,7 @@ export function UserForm({
           <div className="w-1/2 md:w-1/3 px-4 mb-4">
             <FormField
               control={form.control}
-              name="PassportExpirtDate"
+              name="PassportExpiryDate"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="block text-left">
@@ -215,7 +220,11 @@ export function UserForm({
                     <Input
                       type="date"
                       {...field}
-                      value={field.value?.toISOString().split("T")[0]}
+                      value={
+                        field.value
+                          ? new Date(field.value).toISOString().split("T")[0]
+                          : new Date().toISOString().split("T")[0]
+                      }
                       onChange={(e) => field.onChange(new Date(e.target.value))}
                     />
                   </FormControl>
@@ -239,33 +248,36 @@ export function UserForm({
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="PassportFile"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="block text-left">Passport</FormLabel>
-              <FormControl>
-                <Input type="file" accept=".pdf,.jpg,.png" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="PersonPhoto"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="block text-left">Photo</FormLabel>
-              <FormControl>
-                <Input type="file" accept=".jpg,.png" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!row && (
+          <FormField
+            control={form.control}
+            name="PassportFile"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-left">Passport</FormLabel>
+                <FormControl>
+                  <Input type="file" accept=".pdf,.jpg,.png" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        {!row && (
+          <FormField
+            control={form.control}
+            name="PersonPhoto"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="block text-left">Photo</FormLabel>
+                <FormControl>
+                  <Input type="file" accept=".jpg,.png" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         {row && (
           <Button className="w-1/3 mr-2" onClick={handleClearFormData}>
             Clear

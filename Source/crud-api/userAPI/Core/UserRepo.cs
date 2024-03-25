@@ -1,8 +1,10 @@
 ﻿
 using System.Data;
 using Dapper;
+using Microsoft.AspNetCore.StaticFiles;
 using userAPI.Core.Interface;
 using userAPI.Entities;
+using userAPI.Utilities;
 
 namespace userAPI.Core
 {
@@ -15,39 +17,90 @@ namespace userAPI.Core
             _dbConnection = dbConnection;
         }
 
-        public async Task<IEnumerable<User>> GetAllAsync()
+        public async Task<IEnumerable<UserDTO>> GetAllAsync()
         {
-            
-            return await _dbConnection.QueryAsync<User>("SELECT * FROM UserManagement");
+            var users = await _dbConnection.QueryAsync<User>("SELECT * FROM UserManagement");
+
+            var userDTOs = users.Select(user =>
+            {
+                return new UserDTO
+                {
+                    LocationId = user.LocationId,
+                    Name = user.Name,
+                    EmployeeType = user.EmployeeType,
+                    MobileNo = user.MobileNo,
+                    Email = user.Email,
+                    Nationality = user.Nationality,
+                    Designation = user.Designation,
+                    PassportNo = user.PassportNo,
+                    PassportExpiryDate = user.PassportExpirtDate,
+                    PassportFile = Utilities.Utilities.GetIFormFileFromPath(user.PassportFilePath),
+                    PersonPhoto = Utilities.Utilities.GetIFormFileFromPath(user.PersonPhoto)
+                };
+            });
+
+            return userDTOs;
         }
 
-        public async Task<User> GetByIdAsync(int id)
+        public async Task<UserDTO> GetByIdAsync(int id)
         {
-            
-            return await _dbConnection.QueryFirstOrDefaultAsync<User>("SELECT * FROM UserManagement WHERE Id = @Id", new { Id = id });
+            var user = await _dbConnection.QueryFirstOrDefaultAsync<User>("SELECT * FROM UserManagement WHERE LocationId = @Id", new { Id = id });
+
+
+            if (user == null)
+                return null;
+
+            var userDTO = new UserDTO
+            {
+                LocationId = user.LocationId,
+                Name = user.Name,
+                EmployeeType = user.EmployeeType,
+                MobileNo = user.MobileNo,
+                Email = user.Email,
+                Nationality = user.Nationality,
+                Designation = user.Designation,
+                PassportNo = user.PassportNo,
+                PassportExpiryDate = user.PassportExpirtDate,
+                PassportFile = Utilities.Utilities.GetIFormFileFromPath(user.PassportFilePath),
+                PersonPhoto = Utilities.Utilities.GetIFormFileFromPath(user.PersonPhoto)
+            };
+
+            return userDTO;
         }
 
-        public async Task<int> AddAsync(User user)
+        public async Task<User> GetByIdDBDataAsync(int id)
         {
-            
+            var user = await _dbConnection.QueryFirstOrDefaultAsync<User>("SELECT * FROM UserManagement WHERE LocationId = @Id", new { Id = id });
+            return user;
+        }
 
-            const string sql = @"INSERT INTO UserManagement (EmployeeType, Name, MobileNo, Email, Nationality, Designation, PassportNo, PassportExpirtDate, PassportFilePath, PersonPhotoPath)
+            public async Task<int> AddAsync(User user)
+        {
+            try
+            {
+                const string sql = @"INSERT INTO UserManagement (EmployeeType, Name, MobileNo, Email, Nationality, Designation, PassportNo, PassportExpirtDate, PassportFilePath, PersonPhoto)
                                  VALUES (@UserType, @Name, @MobileNo, @Email, @Nationality, @Designation, @PassportNo, @PassportExpirtDate, @PassportFilePath, @PersonPhotoPath);
-                                 SELECT LAST_INSERT_ID();";
+                                 ";
 
-            var parameters = new DynamicParameters();
-            parameters.Add("@UserType", user.EmployeeType);
-            parameters.Add("@Name", user.Name);
-            parameters.Add("@MobileNo", user.MobileNo);
-            parameters.Add("@Email", user.Email);
-            parameters.Add("@Nationality", user.Nationality);
-            parameters.Add("@Designation", user.Designation);
-            parameters.Add("@PassportNo", user.PassportNo);
-            parameters.Add("@PassportExpirtDate", user.PassportExpirtDate);
-            parameters.Add("@PassportFilePath", user.PassportFilePath);
-            parameters.Add("@PersonPhotoPath", user.PersonPhotoPath);
+                var parameters = new DynamicParameters();
+                parameters.Add("@UserType", user.EmployeeType);
+                parameters.Add("@Name", user.Name);
+                parameters.Add("@MobileNo", user.MobileNo);
+                parameters.Add("@Email", user.Email);
+                parameters.Add("@Nationality", user.Nationality);
+                parameters.Add("@Designation", user.Designation);
+                parameters.Add("@PassportNo", user.PassportNo);
+                parameters.Add("@PassportExpirtDate", user.PassportExpirtDate);
+                parameters.Add("@PassportFilePath", user.PassportFilePath);
+                parameters.Add("@PersonPhotoPath", user.PersonPhoto);
 
-            return await _dbConnection.ExecuteScalarAsync<int>(sql, parameters);
+                return await _dbConnection.ExecuteScalarAsync<int>(sql, parameters);
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            
         }
 
         public async Task<int> UpdateAsync(User user)
@@ -64,8 +117,8 @@ namespace userAPI.Core
                                  PassportNo = @PassportNo,
                                  PassportExpirtDate = @PassportExpirtDate,
                                  PassportFilePath = @PassportFilePath,
-                                 PersonPhotoPath = @PersonPhotoPath
-                                 WHERE Id = @Id";
+                                 PersonPhoto = @PersonPhotoPath
+                                 WHERE LocationId = @Id";
 
             var parameters = new DynamicParameters();
             parameters.Add("@UserType", user.EmployeeType);
@@ -77,17 +130,16 @@ namespace userAPI.Core
             parameters.Add("@PassportNo", user.PassportNo);
             parameters.Add("@PassportExpirtDate", user.PassportExpirtDate);
             parameters.Add("@PassportFilePath", user.PassportFilePath);
-            parameters.Add("@PersonPhotoPath", user.PersonPhotoPath);
-            parameters.Add("@Id", user.Id);
+            parameters.Add("@PersonPhotoPath", user.PersonPhoto);
+            parameters.Add("@Id", user.LocationId);
 
             return await _dbConnection.ExecuteAsync(sql, parameters);
         }
 
         public async Task<int> DeleteAsync(int id)
         {
-            
-
-            const string sql = "DELETE FROM UserManagement WHERE Id = @Id";
+         
+            const string sql = "DELETE FROM UserManagement WHERE LocationId = @Id";
             return await _dbConnection.ExecuteAsync(sql, new { Id = id });
         }
     }

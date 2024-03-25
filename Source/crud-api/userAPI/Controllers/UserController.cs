@@ -41,12 +41,11 @@ namespace userAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> AddUser([FromForm] UserDTO UserDTO)
         {
-            // Validation logic here if needed
 
             var User = MapToUser(UserDTO);
 
             var insertedId = await _UserRepository.AddAsync(User);
-            User.Id = insertedId;
+            User.LocationId = insertedId;
 
             return CreatedAtAction(nameof(GetUserById), new { id = insertedId }, User);
         }
@@ -54,14 +53,16 @@ namespace userAPI.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateUser(int id, [FromForm] UserDTO UserDTO)
         {
-            if (id != UserDTO.Id)
+            if (id != UserDTO.LocationId)
                 return BadRequest();
 
-            // Validation logic here if needed
+            var existingUser = await _UserRepository.GetByIdDBDataAsync(id);
+            if (existingUser == null)
+                return NotFound();
 
-            var User = MapToUser(UserDTO);
+            var mergedUser = MergeUserDTOWithExistingData(UserDTO, existingUser);
 
-            await _UserRepository.UpdateAsync(User);
+            await _UserRepository.UpdateAsync(mergedUser);
 
             return NoContent();
         }
@@ -89,9 +90,9 @@ namespace userAPI.Controllers
                 Nationality = UserDTO.Nationality,
                 Designation = UserDTO.Designation,
                 PassportNo = UserDTO.PassportNo,
-                PassportExpirtDate = UserDTO.PassportExpirtDate,
+                PassportExpirtDate = UserDTO.PassportExpiryDate,
                 PassportFilePath = SaveFileAndGetPath(UserDTO.PassportFile),
-                PersonPhotoPath = SaveFileAndGetPath(UserDTO.PersonPhoto)
+                PersonPhoto = SaveFileAndGetPath(UserDTO.PersonPhoto)
             };
         }
 
@@ -101,25 +102,54 @@ namespace userAPI.Controllers
             if (file == null || file.Length == 0)
                 throw new ArgumentException("File is empty or null.");
 
-            // Ensure the uploads directory exists
-            var uploadsDirectory = Path.Combine(_webHostEnvironment.ContentRootPath, "uploads");
+            
+            var relativeDirectory = "uploads";
+
+            var uploadsDirectory = Path.Combine("./", relativeDirectory);
+
             if (!Directory.Exists(uploadsDirectory))
                 Directory.CreateDirectory(uploadsDirectory);
 
-            // Generate a unique file name
-            var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+            var originalFileNameWithoutExtension = Path.GetFileNameWithoutExtension(file.FileName);
 
-            // Combine the uploads directory path with the unique file name
-            var filePath = Path.Combine(uploadsDirectory, uniqueFileName);
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var sanitizedFileName = string.Concat(originalFileNameWithoutExtension.Split(invalidChars));
 
-            // Save the file to the specified path
+            var uniqueFileName = $"{Guid.NewGuid()}_{sanitizedFileName}{Path.GetExtension(file.FileName)}";
+
+
+
+            var filePath = Path.Combine(uploadsDirectory, uniqueFileName); 
+
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 file.CopyTo(stream);
             }
 
-            // Return the file path
             return filePath;
+        }
+
+        private User MergeUserDTOWithExistingData(UserDTO userDTO, User existingUser)
+        {
+            if (userDTO.Name != null)
+                existingUser.Name = userDTO.Name;
+            if (userDTO.EmployeeType != null)
+                existingUser.EmployeeType = userDTO.EmployeeType;
+            if (userDTO.MobileNo != null)
+                existingUser.MobileNo = userDTO.MobileNo;
+            if (userDTO.Email != null)
+                existingUser.Email = userDTO.Email;
+            if (userDTO.Nationality != null)
+                existingUser.Nationality = userDTO.Nationality;
+            if (userDTO.Designation != null)
+                existingUser.Designation = userDTO.Designation;
+            if (userDTO.PassportNo != null)
+                existingUser.PassportNo = userDTO.PassportNo;
+            if (userDTO.PassportExpiryDate != null)
+                existingUser.PassportExpirtDate = userDTO.PassportExpiryDate;
+
+
+            return existingUser;
         }
     }
 }

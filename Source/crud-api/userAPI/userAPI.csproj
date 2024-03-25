@@ -18,11 +18,15 @@
     <None Remove="Controllers\" />
     <None Remove="Entities\" />
     <None Remove="Core\Interface\" />
+    <None Remove="Utilities\" />
+    <None Remove="uploads\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Core\" />
     <Folder Include="Controllers\" />
     <Folder Include="Entities\" />
     <Folder Include="Core\Interface\" />
+    <Folder Include="Utilities\" />
+    <Folder Include="uploads\" />
   </ItemGroup>
 </Project>
