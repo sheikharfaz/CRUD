@@ -153,6 +153,19 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => <div>{row.getValue("Designation")}</div>,
   },
   {
+    accessorKey: "PassportNo",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Passport No
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.getValue("PassportNo")}</div>,
+  },
+  {
     accessorKey: "PassportExpiryDate",
     header: ({ column }) => (
       <Button

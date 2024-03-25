@@ -39,7 +39,9 @@ function App() {
           }}
         >
           <TabsList className="grid w-full grid-cols-2 ">
-            <TabsTrigger value="create">Create User</TabsTrigger>
+            <TabsTrigger value="create">
+              {userData ? "Update User" : "Create User"}
+            </TabsTrigger>
             <TabsTrigger value="view">View User details</TabsTrigger>
           </TabsList>
           <TabsContent

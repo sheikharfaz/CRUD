@@ -85,6 +85,7 @@ export function UserForm({
       } catch (error) {
         console.error("Error creating user:", error);
       }
+      handleClearFormData();
     });
   }
 
